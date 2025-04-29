@@ -7,32 +7,67 @@ import { Result, makeOk, makeFailure } from "../shared/result";
 import { format } from "../shared/format";
 
 export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
-    proc.op === "+" ? (allT(isNumber, args) ? makeOk(reduce((x, y) => x + y, 0, args)) : 
-                                              makeFailure(`+ expects numbers only: ${format(args)}`)) :
-    proc.op === "-" ? minusPrim(args) :
-    proc.op === "*" ? (allT(isNumber, args) ? makeOk(reduce((x, y) => x * y, 1, args)) : 
-                                              makeFailure(`* expects numbers only: ${format(args)}`)) :
-    proc.op === "/" ? divPrim(args) :
-    proc.op === ">" ? makeOk(args[0] > args[1]) :
-    proc.op === "<" ? makeOk(args[0] < args[1]) :
-    proc.op === "=" ? makeOk(args[0] === args[1]) :
-    proc.op === "not" ? makeOk(!args[0]) :
-    proc.op === "and" ? isBoolean(args[0]) && isBoolean(args[1]) ? makeOk(args[0] && args[1]) : 
-                                                                   makeFailure(`Arguments to "and" not booleans: ${format(args)}`) :
-    proc.op === "or" ? isBoolean(args[0]) && isBoolean(args[1]) ? makeOk(args[0] || args[1]) : 
-                                                                  makeFailure(`Arguments to "or" not booleans: ${format(args)}`) :
-    proc.op === "eq?" ? makeOk(eqPrim(args)) :
-    proc.op === "string=?" ? makeOk(args[0] === args[1]) :
-    proc.op === "cons" ? makeOk(consPrim(args[0], args[1])) :
-    proc.op === "car" ? carPrim(args[0]) :
-    proc.op === "cdr" ? cdrPrim(args[0]) :
-    proc.op === "list" ? makeOk(listPrim(args)) :
-    proc.op === "pair?" ? makeOk(isPairPrim(args[0])) :
-    proc.op === "number?" ? makeOk(typeof (args[0]) === 'number') :
-    proc.op === "boolean?" ? makeOk(typeof (args[0]) === 'boolean') :
-    proc.op === "symbol?" ? makeOk(isSymbolSExp(args[0])) :
-    proc.op === "string?" ? makeOk(isString(args[0])) :
-    makeFailure(`Bad primitive op: ${format(proc.op)}`);
+  proc.op === '+'
+    ? allT(isNumber, args)
+      ? makeOk(reduce((x, y) => x + y, 0, args))
+      : makeFailure(`+ expects numbers only: ${format(args)}`)
+    : proc.op === '-'
+    ? minusPrim(args)
+    : proc.op === '*'
+    ? allT(isNumber, args)
+      ? makeOk(reduce((x, y) => x * y, 1, args))
+      : makeFailure(`* expects numbers only: ${format(args)}`)
+    : proc.op === '/'
+    ? divPrim(args)
+    : proc.op === '>'
+    ? makeOk(args[0] > args[1])
+    : proc.op === '<'
+    ? makeOk(args[0] < args[1])
+    : proc.op === '='
+    ? makeOk(args[0] === args[1])
+    : proc.op === 'not'
+    ? makeOk(!args[0])
+    : proc.op === 'and'
+    ? isBoolean(args[0]) && isBoolean(args[1])
+      ? makeOk(args[0] && args[1])
+      : makeFailure(`Arguments to "and" not booleans: ${format(args)}`)
+    : proc.op === 'or'
+    ? isBoolean(args[0]) && isBoolean(args[1])
+      ? makeOk(args[0] || args[1])
+      : makeFailure(`Arguments to "or" not booleans: ${format(args)}`)
+    : proc.op === 'eq?'
+    ? makeOk(eqPrim(args))
+    : proc.op === 'string=?'
+    ? makeOk(args[0] === args[1])
+    : proc.op === 'dict?'
+    ? makeOk(isDictPrim(args[0]))
+    : proc.op === 'dict'
+    ? args.length === 1
+      ? isValidDict(args[0])
+        ? makeOk(dictPrim(args[0]))
+        : makeFailure(`Invalid dict: ${format(args)}`)
+      : makeFailure(`dict expects 1 argument: ${format(args)}`)
+    : proc.op === 'get'
+    ? dictGetPrim(args[0], args[1])
+    : proc.op === 'cons'
+    ? makeOk(consPrim(args[0], args[1]))
+    : proc.op === 'car'
+    ? carPrim(args[0])
+    : proc.op === 'cdr'
+    ? cdrPrim(args[0])
+    : proc.op === 'list'
+    ? makeOk(listPrim(args))
+    : proc.op === 'pair?'
+    ? makeOk(isPairPrim(args[0]))
+    : proc.op === 'number?'
+    ? makeOk(typeof args[0] === 'number')
+    : proc.op === 'boolean?'
+    ? makeOk(typeof args[0] === 'boolean')
+    : proc.op === 'symbol?'
+    ? makeOk(isSymbolSExp(args[0]))
+    : proc.op === 'string?'
+    ? makeOk(isString(args[0]))
+    : makeFailure(`Bad primitive op: ${format(proc.op)}`);
 
 const minusPrim = (args: Value[]): Result<number> => {
     // TODO complete
@@ -95,3 +130,59 @@ export const listPrim = (vals: List<Value>): EmptySExp | CompoundSExp =>
 
 const isPairPrim = (v: Value): boolean =>
     isCompoundSExp(v);
+
+const isDictPrim = (v: Value): boolean =>
+  isCompoundSExp(v) &&
+  isCompoundSExp(v.val1) &&
+  (isEmptySExp(v.val2) || isDictPrim(v.val2));
+
+  const dictPrim = (val: Value): EmptySExp | CompoundSExp => {
+    return isCompoundSExp(val)
+      ? makeCompoundSExp(val.val1, dictPrim(val.val2))
+      : makeEmptySExp();
+  };
+
+const dictGetPrim = (dict: Value, key: Value): Result<Value> => {
+    return isSymbolSExp(key)
+      ? isCompoundSExp(dict)
+        ? isCompoundSExp(dict.val1)
+          ? isSymbolSExp(dict.val1.val1) && dict.val1.val1.val === key.val
+            ? makeOk(dict.val1.val2)
+            : dictGetPrim(dict.val2, key)
+          : isEmptySExp(dict.val2)
+          ? makeFailure(`Key not found: ${format(key)}`)
+          : dictGetPrim(dict.val2, key)
+        : makeFailure(`param is not a dict ${format(dict)}`)
+      : makeFailure(`Key is not a symbol ${format(key)}`);
+}
+
+const isValidDict = (v: Value, seenKeys: Set<string> = new Set()): boolean => {
+    if (isEmptySExp(v)) {
+        return true;
+    }
+    
+    if (!isCompoundSExp(v)) {
+        return false;
+    }
+    
+    const currentPair = v.val1;
+    if (!isCompoundSExp(currentPair)) {
+        return false;
+    }
+    
+    if (!isSymbolSExp(currentPair.val1)) {
+        return false;
+    }
+    
+    // Check for duplicate keys
+    const key = currentPair.val1.val;
+    if (seenKeys.has(key)) {
+        return false;
+    }
+    seenKeys.add(key);
+    
+    return isValidDict(v.val2, seenKeys);
+};
+
+
+
