@@ -13,7 +13,7 @@ const q23: string = fs.readFileSync(__dirname + '/../src/q23.l3', { encoding: 'u
 const evalP = (x: string): Result<Value> =>
     bind(parseL3(x), evalL3program);
 
-describe('Q23 Tests', () => {
+describe.only('Q23 Tests', () => {
     
    it("Q23 test 1", () => {
         expect(evalP(`(L3 ` + q23 + ` (get (dict '((a . 1) (b . 2))) 'b))`)).to.deep.equal(makeOk(2));
