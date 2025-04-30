@@ -1,8 +1,9 @@
 import { filter, indexOf, map, includes, zip, KeyValuePair } from "ramda";
-import { CExp, ProcExp, VarDecl, VarRef } from "./L32-ast";
+import { CExp, isDictExp, makeDictExp, makeEntry, ProcExp, VarDecl, VarRef } from "./L32-ast";
 import { isAppExp, isBoolExp, isIfExp, isLitExp, isNumExp, isPrimOp, isProcExp, isStrExp, isVarRef } from "./L32-ast";
 import { makeAppExp, makeIfExp, makeProcExp, makeVarDecl, makeVarRef } from "./L32-ast";
 import { first } from '../shared/list';
+import { makeSymbolSExp, valueToString } from "./L32-value";
 
 // For applicative eval - the type of exps should be ValueExp[] | VarRef[];
 // where ValueExp is an expression which directly encodes a value:
@@ -29,16 +30,33 @@ export const substitute = (body: CExp[], vars: string[], exps: CExp[]): CExp[] =
         );
     };
     
-    const sub = (e: CExp): CExp => isNumExp(e) ? e :
-        isBoolExp(e) ? e :
-        isPrimOp(e) ? e :
-        isLitExp(e) ? e :
-        isStrExp(e) ? e :
-        isVarRef(e) ? subVarRef(e) :
-        isIfExp(e) ? makeIfExp(sub(e.test), sub(e.then), sub(e.alt)) :
-        isProcExp(e) ? subProcExp(e) :
-        isAppExp(e) ? makeAppExp(sub(e.rator), map(sub, e.rands)) :
-        e;
+    const sub = (e: CExp): CExp =>
+      isNumExp(e)
+        ? e
+        : isBoolExp(e)
+        ? e
+        : isPrimOp(e)
+        ? e
+        : isLitExp(e)
+        ? e
+        : isStrExp(e)
+        ? e
+        : isVarRef(e)
+        ? subVarRef(e)
+        : isIfExp(e)
+        ? makeIfExp(sub(e.test), sub(e.then), sub(e.alt))
+        : isProcExp(e)
+        ? subProcExp(e)
+        : isAppExp(e)
+        ? makeAppExp(sub(e.rator), map(sub, e.rands))
+        : isDictExp(e)
+        ? makeDictExp(
+            map(
+              (entry) => makeEntry(valueToString(entry.key), sub(entry.value)),
+              e.entries
+            )
+          )
+        : e;
     
     return map(sub, body);
 };

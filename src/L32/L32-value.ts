@@ -1,7 +1,7 @@
 // ========================================================
 // Value type definition for L3
 
-import { isPrimOp, CExp, PrimOp, VarDecl } from './L32-ast';
+import { isPrimOp, CExp, PrimOp, VarDecl, Entry } from './L32-ast';
 import { isNumber, isArray, isString } from '../shared/type-predicates';
 import { append } from 'ramda';
 
@@ -21,6 +21,18 @@ export const makeClosure = (params: VarDecl[], body: CExp[]): Closure =>
     ({tag: "Closure", params: params, body: body});
 export const isClosure = (x: any): x is Closure => x.tag === "Closure";
 
+export type DictValue = {
+    tag: "DictValue";
+    entries: [SymbolSExp, Value][];
+}
+
+export const makeDictValue = (entries: [SymbolSExp, Value][]): DictValue => ({
+    tag: "DictValue",
+    entries: entries
+});
+
+export const isDictValue = (x: any): x is DictValue => x.tag === "DictValue";
+
 // ========================================================
 // SExp
 export type CompoundSExp = {
@@ -36,7 +48,7 @@ export type SymbolSExp = {
     val: string;
 }
 
-export type SExpValue = number | boolean | string | PrimOp | Closure | SymbolSExp | EmptySExp | CompoundSExp;
+export type SExpValue = number | boolean | string | PrimOp | Closure | SymbolSExp | EmptySExp | CompoundSExp | DictValue;
 export const isSExp = (x: any): x is SExpValue =>
     typeof(x) === 'string' || typeof(x) === 'boolean' || typeof(x) === 'number' ||
     isSymbolSExp(x) || isCompoundSExp(x) || isEmptySExp(x) || isPrimOp(x) || isClosure(x);
@@ -80,4 +92,5 @@ export const valueToString = (val: Value): string =>
     isSymbolSExp(val) ? val.val :
     isEmptySExp(val) ? "'()" :
     isCompoundSExp(val) ? compoundSExpToString(val) :
+    isDictValue(val) ? `(dict ${val.entries.map(([k, v]) => `(${valueToString(k)} ${valueToString(v)})`).join(" ")})` :
     val;
