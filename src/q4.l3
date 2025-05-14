@@ -1,0 +1,15 @@
+(let 
+  (
+    (x 2)
+    (h (lambda (x) 
+           (lambda (y) (* x y))))
+  )
+
+  (
+    let 
+      (
+        (f  (h 3))
+      )
+      (f 2)
+  )  
+)
