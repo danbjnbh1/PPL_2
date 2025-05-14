@@ -7,7 +7,7 @@ import { parse as p } from "../src/shared/parser";
 const l2toJSResult = (x: string): Result<string> =>
     bind(bind(p(x), parseL3Exp), l2ToJS);
 
-describe.skip('Q3 Tests', () => {
+describe('Q3 Tests', () => {
     it('parses primitive ops', () => {
         expect(l2toJSResult(`(+ 3 5 7)`)).to.deep.equal(makeOk(`(3 + 5 + 7)`));
         expect(l2toJSResult(`(= 3 (+ 1 2))`)).to.deep.equal(makeOk(`(3 === (1 + 2))`));
