@@ -55,4 +55,11 @@ describe('Q23 Tests', () => {
             (bind (get (dict '((a . 1) (b . 2))) 'b) (lambda (x) (* x x))))`
         )).to.deep.equal(makeOk(4));
     });
+
+    it("Q23 test 8 - duplicate keys level error", () => {
+        expect(evalP(`(L3 ` + q23 + ` (is-error? (dict '((a . 1) (a . 2)))) )`)).to.deep.equal(makeOk(true));
+        expect(evalP(`(L3 ` + q23 + ` 
+            (define err (dict '((a . 1) (a . 2))))
+            (eq? (cdr err) "duplicate key"))`)).to.deep.equal(makeOk(true));
+    });
 });

@@ -1,14 +1,58 @@
+(define exists-key
+  (lambda (k pairs)
+    (if (eq? pairs '())
+        #f
+        (if (pair? pairs)
+            (if (pair? (car pairs))
+                (if (eq? (car (car pairs)) k)
+                    #t
+                    (exists-key k (cdr pairs)))
+                #f)
+            #f))))
+
+(define has-duplicate-key
+  (lambda (pairs)
+    (if (eq? pairs '())
+        #f
+        (if (pair? pairs)
+            (if (pair? (car pairs))
+                (if (exists-key (car (car pairs)) (cdr pairs))
+                    #t
+                    (has-duplicate-key (cdr pairs)))
+                #f)
+            #f))))
+
+(define is-dict-pairs
+  (lambda (v)
+    (if (eq? v '())
+        #t
+        (if (pair? v)
+            (if (pair? (car v))
+                (if (symbol? (car (car v)))
+                    (is-dict-pairs (cdr v))
+                    #f)
+                #f)
+            #f))))
+
 (define dict
   (lambda (pairs)
-    pairs))
+    (if (not (pair? pairs))
+        '()
+        (if (has-duplicate-key pairs)
+            (make-error "duplicate key")
+            pairs))))
 
 (define get
   (lambda (d k)
     (if (eq? d '())
         (make-error "key not found")
-        (if (eq? (car (car d)) k)
-            (cdr (car d))
-            (get (cdr d) k)))))
+        (if (not (pair? d))
+            (make-error "dict is not a list")
+            (if (not (pair? (car d)))
+                (make-error "malformed dict entry")
+                (if (eq? (car (car d)) k)
+                    (cdr (car d))
+                    (get (cdr d) k)))))))
 
 (define dict?
   (lambda (d)

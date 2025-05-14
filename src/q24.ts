@@ -39,7 +39,36 @@ const convertCExpToSExp = (exp: CExp): SExpValue => {
   if (isStrExp(exp)) return exp.val;
   if (isVarRef(exp)) return makeSymbolSExp(exp.var);
   if (isLitExp(exp)) return exp.val;
-  if (isPrimOp(exp)) return exp;
+  if (isPrimOp(exp)) return makeSymbolSExp(exp.op);
+  if (isAppExp(exp)) {
+    // Convert (rator rand1 rand2 ...) to CompoundSExp list
+    const items = [exp.rator, ...exp.rands].map(convertCExpToSExp);
+    return items.reduceRight<SExpValue>(
+      (acc, curr) => makeCompoundSExp(curr, acc),
+      makeEmptySExp()
+    );
+  }
+  if (isProcExp(exp)) {
+    // (lambda (args) body ...)
+    const lambdaSym = makeSymbolSExp('lambda');
+    const argsList = exp.args
+      .map(arg => makeSymbolSExp(arg.var))
+      .reduceRight<SExpValue>((acc, curr) => makeCompoundSExp(curr, acc), makeEmptySExp());
+    const bodySExps = exp.body.map(convertCExpToSExp);
+    const all = [lambdaSym, argsList, ...bodySExps];
+    return all.reduceRight<SExpValue>((acc, curr) => makeCompoundSExp(curr, acc), makeEmptySExp());
+  }
+  if (isDictExp(exp)) {
+    // (dict (key1 val1) (key2 val2) ...)
+    const dictSym = makeSymbolSExp('dict');
+    const entrySExps = exp.entries.map(entry => {
+      const keySExp = makeSymbolSExp(entry.key.val);
+      const valSExp = convertCExpToSExp(entry.value);
+      return makeCompoundSExp(keySExp, makeCompoundSExp(valSExp, makeEmptySExp()));
+    });
+    const all = [dictSym, ...entrySExps];
+    return all.reduceRight<SExpValue>((acc, curr) => makeCompoundSExp(curr, acc), makeEmptySExp());
+  }
   return makeSymbolSExp(exp.toString());
 };
 
