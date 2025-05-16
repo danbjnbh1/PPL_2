@@ -54,4 +54,21 @@ describe('Q21 Tests', () => {
             'a))`)).to.deep.equal(makeOk(2));
     });
 
+    // Additional test cases
+    it("Q21 test 9 - get with non-existent key", () => {
+        expect(evalP(`(L31 (get (dict '((a . 1) (b . 2))) 'c))`)).is.satisfy(isFailure);
+    });
+
+    it("Q21 test 10 - dict? with valid dictionary", () => {
+        expect(evalP(`(L31 (dict? (dict '((a . 1) (b . 2)))))`)).to.deep.equal(makeOk(true));
+    });
+
+    it("Q21 test 11 - dict? with invalid dictionary structure", () => {
+        expect(evalP(`(L31 (dict? '((a . 1) b)))`)).to.deep.equal(makeOk(false));
+    });
+
+    it("Q21 test 12 - dict? with valid dictionary structure", () => {
+        expect(evalP(`(L31 (dict? '((a . 1) (b))))`)).to.deep.equal(makeOk(true));
+    });
+
 });

@@ -40,6 +40,11 @@ describe('Q22 Tests', () => {
     ).to.deep.equal(makeOk(2));
   });
 
+  it('Q22 Test 4 - creating dict in lambda', () => {
+    expect(evalP(
+      `(L32 (define dict-a (lambda (b) (dict (a b)) )) ((dict-a 5) 'a))`)).to.deep.equal(makeOk(5));
+  });
+
   // Test cases for dictionary lookup failures
   describe('Dictionary lookup failures', () => {
     it('should fail when applying dictionary with no arguments', () => {

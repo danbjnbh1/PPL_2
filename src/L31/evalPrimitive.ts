@@ -43,7 +43,7 @@ export const applyPrimitive = (proc: PrimOp, args: Value[]): Result<Value> =>
     ? makeOk(isDictPrim(args[0]))
     : proc.op === 'dict'
     ? args.length === 1
-      ? isValidDict(args[0])
+      ? isDictPrim(args[0])
         ? makeOk(dictPrim(args[0]))
         : makeFailure(`Invalid dict: ${format(args)}`)
       : makeFailure(`dict expects 1 argument: ${format(args)}`)
@@ -134,9 +134,10 @@ const isPairPrim = (v: Value): boolean =>
 const isDictPrim = (v: Value): boolean =>
   isCompoundSExp(v) &&
   isCompoundSExp(v.val1) &&
-  (isEmptySExp(v.val2) || isDictPrim(v.val2));
+  (isEmptySExp(v.val2) || isDictPrim(v.val2)) &&
+  isValidDict(v);
 
-  const dictPrim = (val: Value): EmptySExp | CompoundSExp => {
+const dictPrim = (val: Value): EmptySExp | CompoundSExp => {
     return isCompoundSExp(val)
       ? makeCompoundSExp(val.val1, dictPrim(val.val2))
       : makeEmptySExp();
