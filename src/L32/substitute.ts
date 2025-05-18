@@ -81,6 +81,12 @@ export const renameExps = (exps: CExp[]): CExp[] => {
         isIfExp(e) ? makeIfExp(replace(e.test), replace(e.then), replace(e.alt)) :
         isAppExp(e) ? makeAppExp(replace(e.rator), map(replace, e.rands)) :
         isProcExp(e) ? replaceProc(e) :
+        isDictExp(e) ? makeDictExp(
+            map(
+              (entry) => makeEntry(valueToString(entry.key), replace(entry.value)),
+              e.entries
+            )
+        ) :
         e;
     
     // Rename the params and substitute old params with renamed ones.
